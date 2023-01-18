@@ -131,3 +131,5 @@ dmypy.json
 .idea
 
 Scripts!/Scripts/
+!/Scripts/
+!/Lib/
