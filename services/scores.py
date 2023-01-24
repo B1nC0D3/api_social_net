@@ -1,10 +1,13 @@
-from fastapi import HTTPException, status
+from fastapi import status
 
 from database.tables import Dislikes, Likes, Post
 from services.base import BaseService
 
 
 class BaseScore(BaseService):
+
+    def get_scores(self, post_id: int):
+        return self._get_scores(post_id)
 
     def _return_author_if_post_exists(self, post_id: int) -> int:
         post = (self.session
@@ -39,6 +42,18 @@ class BaseScore(BaseService):
                    .first())
         return dislike
 
+    def _get_scores(self, post_id: int):
+        scores = (self.session
+                  .query(Post.likes, Post.dislikes)
+                  .filter(Post.id == post_id)
+                  .first())
+        if not scores:
+            self._raise_exception(
+                    status=status.HTTP_404_NOT_FOUND,
+                    detail='Post not found'
+            )
+        return scores
+
 
 class LikesService(BaseScore):
 
@@ -58,6 +73,7 @@ class LikesService(BaseScore):
         )
         self.session.add(like)
         self.session.commit()
+        return self._get_scores(post_id)
 
     def delete(self, user_id: int, post_id: int):
         author_id = self._return_author_if_post_exists(post_id)
@@ -74,6 +90,7 @@ class LikesService(BaseScore):
                 .first())
         self.session.delete(like)
         self.session.commit()
+        return self._get_scores(post_id)
 
 
 class DislikesService(BaseScore):
@@ -95,6 +112,7 @@ class DislikesService(BaseScore):
         )
         self.session.add(dislike)
         self.session.commit()
+        return self._get_scores(post_id)
 
     def delete(self, user_id: int, post_id: int):
         author_id = self._return_author_if_post_exists(post_id)
@@ -111,3 +129,4 @@ class DislikesService(BaseScore):
                    .first())
         self.session.delete(dislike)
         self.session.commit()
+        return self._get_scores(post_id)
